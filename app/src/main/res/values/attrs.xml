@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 页面渐变背景起止色（随主题切换） -->
+    <attr name="gradientTop" format="color" />
+    <attr name="gradientBottom" format="color" />
+</resources>

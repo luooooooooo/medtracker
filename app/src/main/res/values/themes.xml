@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ========== 基础主题（薄荷，默认） ========== -->
+    <style name="Theme.MedTracker" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#4E8A7C</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#D8EAE3</item>
+        <item name="colorOnPrimaryContainer">#1E4038</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F6F3EC</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#333838</item>
+        <item name="colorSurfaceVariant">#E3EFE9</item>
+        <item name="colorOnSurfaceVariant">#707B78</item>
+        <item name="colorOutline">#B9C2BD</item>
+        <item name="colorOutlineVariant">#D8DCD8</item>
+        <item name="gradientTop">#E7F1EC</item>
+        <item name="gradientBottom">#F7F4EE</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F7F4EE</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 薄荷（默认，继承基础主题） -->
+    <style name="Theme.Mint" parent="Theme.MedTracker" />
+
+    <!-- 雾蓝 -->
+    <style name="Theme.Blue" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#5F7E99</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#D9E6F0</item>
+        <item name="colorOnPrimaryContainer">#223A4C</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F5F3EE</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#333838</item>
+        <item name="colorSurfaceVariant">#E2EAF1</item>
+        <item name="colorOnSurfaceVariant">#707B78</item>
+        <item name="colorOutline">#BAC3C9</item>
+        <item name="colorOutlineVariant">#D9DEDF</item>
+        <item name="gradientTop">#E4ECF3</item>
+        <item name="gradientBottom">#F6F3EE</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F6F3EE</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 墨黑 -->
+    <style name="Theme.Charcoal" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#4A504F</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#DADEDD</item>
+        <item name="colorOnPrimaryContainer">#222625</item>
+        <item name="colorSecondary">#8F8580</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#E8E2DE</item>
+        <item name="colorOnSecondaryContainer">#352E2A</item>
+        <item name="android:colorBackground">#F4F4F2</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#2B2F2E</item>
+        <item name="colorSurfaceVariant">#E4E6E4</item>
+        <item name="colorOnSurfaceVariant">#6E7472</item>
+        <item name="colorOutline">#B7BCBA</item>
+        <item name="colorOutlineVariant">#D9DCDA</item>
+        <item name="gradientTop">#E9EAE8</item>
+        <item name="gradientBottom">#F6F5F2</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F6F5F2</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 豆沙粉 -->
+    <style name="Theme.Pink" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#B07171</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#F0DFDD</item>
+        <item name="colorOnPrimaryContainer">#552B2B</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F7F3EE</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#383432</item>
+        <item name="colorSurfaceVariant">#F0E3E0</item>
+        <item name="colorOnSurfaceVariant">#7A716E</item>
+        <item name="colorOutline">#C3B9B5</item>
+        <item name="colorOutlineVariant">#E0D9D5</item>
+        <item name="gradientTop">#F4E7E3</item>
+        <item name="gradientBottom">#F9F5F0</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F9F5F0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 香芋紫 -->
+    <style name="Theme.Purple" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#7E72A0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#E4DFF0</item>
+        <item name="colorOnPrimaryContainer">#362D4E</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F6F3EF</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#353638</item>
+        <item name="colorSurfaceVariant">#E9E4F0</item>
+        <item name="colorOnSurfaceVariant">#75707C</item>
+        <item name="colorOutline">#BFB9C9</item>
+        <item name="colorOutlineVariant">#DDD8E4</item>
+        <item name="gradientTop">#ECE7F2</item>
+        <item name="gradientBottom">#F7F4EF</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F7F4EF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 鼠尾草 -->
+    <style name="Theme.Sage" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#73887B</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#DEE8E0</item>
+        <item name="colorOnPrimaryContainer">#2B3A30</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F6F4EE</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#333836</item>
+        <item name="colorSurfaceVariant">#E2EAE2</item>
+        <item name="colorOnSurfaceVariant">#707B74</item>
+        <item name="colorOutline">#B9C4BB</item>
+        <item name="colorOutlineVariant">#D8DFD8</item>
+        <item name="gradientTop">#E8EFE6</item>
+        <item name="gradientBottom">#F6F4EE</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F6F4EE</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 燕麦 -->
+    <style name="Theme.Oat" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#9A8268</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#EFE6D8</item>
+        <item name="colorOnPrimaryContainer">#45372A</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F8F4ED</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#393633</item>
+        <item name="colorSurfaceVariant">#EFE8DB</item>
+        <item name="colorOnSurfaceVariant">#7C7468</item>
+        <item name="colorOutline">#C7BEB0</item>
+        <item name="colorOutlineVariant">#E3DCD0</item>
+        <item name="gradientTop">#F2EBE0</item>
+        <item name="gradientBottom">#F9F6F0</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F9F6F0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 陶土 -->
+    <style name="Theme.Terracotta" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#A97B69</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#F0E1D8</item>
+        <item name="colorOnPrimaryContainer">#4C3027</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F8F4EF</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#393533</item>
+        <item name="colorSurfaceVariant">#F0E4DD</item>
+        <item name="colorOnSurfaceVariant">#7D736D</item>
+        <item name="colorOutline">#C9BCB5</item>
+        <item name="colorOutlineVariant">#E4DAD3</item>
+        <item name="gradientTop">#F3E7E0</item>
+        <item name="gradientBottom">#F9F6F1</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F9F6F1</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 鸢尾蓝 -->
+    <style name="Theme.Periwinkle" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#6F7CA0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#DFE3F0</item>
+        <item name="colorOnPrimaryContainer">#2C3350</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F5F4EF</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#34363A</item>
+        <item name="colorSurfaceVariant">#E5E7F0</item>
+        <item name="colorOnSurfaceVariant">#737680</item>
+        <item name="colorOutline">#BCBFCB</item>
+        <item name="colorOutlineVariant">#DBDDE4</item>
+        <item name="gradientTop">#E7E9F2</item>
+        <item name="gradientBottom">#F6F4EF</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F6F4EF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- 梅子 -->
+    <style name="Theme.Plum" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#8F5B6A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#EFDDE2</item>
+        <item name="colorOnPrimaryContainer">#472430</item>
+        <item name="colorSecondary">#A98E84</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#EFE2DA</item>
+        <item name="colorOnSecondaryContainer">#3A2B24</item>
+        <item name="android:colorBackground">#F7F4EF</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#383535</item>
+        <item name="colorSurfaceVariant">#EFE1E4</item>
+        <item name="colorOnSurfaceVariant">#7D7175</item>
+        <item name="colorOutline">#CABCC1</item>
+        <item name="colorOutlineVariant">#E5DADD</item>
+        <item name="gradientTop">#F3E7EA</item>
+        <item name="gradientBottom">#F8F5F0</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#F8F5F0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

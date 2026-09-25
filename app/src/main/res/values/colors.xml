@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 小精灵角色固定色（不随主题变化） -->
+    <color name="mascot_cream">#FFF9F0</color>
+    <color name="mascot_outline">#F0DCC2</color>
+    <color name="cup">#9BE8D8</color>
+    <color name="cup_light">#EAF9F5</color>
+    <color name="coral_300">#FFB9A8</color>
+    <color name="gold">#FFD9A0</color>
+    <color name="mint_launcher">#4E8A7C</color>
+</resources>

@@ -36,4 +36,6 @@
     <string name="slot_late_title">深夜喝药</string>
     <string name="slot_late_time">深夜 · 建议 23:00</string>
     <string name="settings_slots_section">每日喝药次数</string>
+    <string name="widget_description">在桌面直接完成每日喝药打卡</string>
+    <string name="widget_slot_icon_desc">时段状态</string>
 </resources>

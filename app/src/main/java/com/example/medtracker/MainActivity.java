@@ -148,13 +148,14 @@ public class MainActivity extends AppCompatActivity {
         return n;
     }
 
-    /** 修改每天打卡次数：同步当天记录后生效。 */
+    /** 修改每天打卡次数：同步当天记录后生效，并刷新桌面小部件。 */
     static void setSlotCount(Context c, int count) {
         if (count < 1 || count > MAX_SLOTS) {
             return;
         }
         prefs(c).edit().putInt(KEY_SLOT_COUNT, count).apply();
         persistDay(c, todayString());
+        MedWidgetProvider.updateAll(c);
     }
 
     /** 若本地日期与今天不一致，则清空打卡状态并写入今天，实现“每天零点进入新的一天”。 */
@@ -184,13 +185,21 @@ public class MainActivity extends AppCompatActivity {
         return "slot_" + slot + "_taken";
     }
 
-    private static boolean isTaken(Context c, int slot) {
+    static boolean isTaken(Context c, int slot) {
         return prefs(c).getBoolean(slotKey(slot), false);
     }
 
-    private static void setTaken(Context c, int slot, boolean taken) {
+    static void setTaken(Context c, int slot, boolean taken) {
         prefs(c).edit().putBoolean(slotKey(slot), taken).apply();
         persistDay(c, todayString());
+    }
+
+    /** 今日所有时段是否全部完成（静态版，供桌面小部件等使用）。 */
+    static boolean allDone(Context c) {
+        for (int i = 0; i < getSlotCount(c); i++) {
+            if (!isTaken(c, i)) return false;
+        }
+        return true;
     }
 
     /** 把当天各时段打卡状态写入历史记录，供日历统计使用。格式：N 位字符（每时段，1=已完成）。 */
@@ -525,6 +534,7 @@ public class MainActivity extends AppCompatActivity {
         item.setFocusable(true);
         item.setOnClickListener(v -> {
             ThemeUtil.setThemeIndex(this, idx);
+            MedWidgetProvider.updateAll(this); // 小部件同步换色
             dialog.dismiss();
             recreate(); // 重新应用主题
         });
@@ -560,10 +570,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean allDone() {
-        for (int i = 0; i < slotCount(); i++) {
-            if (!isTaken(this, i)) return false;
-        }
-        return true;
+        return allDone(this);
     }
 
     private void toggle(int slot) {

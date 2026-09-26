@@ -133,7 +133,12 @@ public class StatsActivity extends AppCompatActivity {
                 row = newRow();
             }
         }
+        // 最后一行若不满 7 天，补足空列，保证日期列与星期表头严格对齐
         if (filled % 7 != 0) {
+            while (filled % 7 != 0) {
+                row.addView(new View(this), cellWeight());
+                filled++;
+            }
             grid.addView(row);
         }
     }

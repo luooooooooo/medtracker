@@ -50,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_LAST_DONE = "last_done_date";
     private static final String KEY_HEADER = "header_path";
     private static final String KEY_SLOT_COUNT = "slot_count";
+    private static final String KEY_MAIN_TITLE = "main_title";
+    private static final String KEY_HINT_TEXT = "hint_text";
     private static final String ACTION_MIDNIGHT = "com.example.medtracker.MIDNIGHT";
 
     private static final int MAX_SLOTS = 6;
@@ -81,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
     private LinearProgressIndicator progressBar;
     private ImageView headerImage;
     private MaterialCardView headerCard;
+    private TextView headerTitle;
+    private TextView hintText;
     private ConfettiView confetti;
     private final View[] rowViews = new View[MAX_SLOTS];
 
@@ -102,13 +106,57 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** 某次记录位置对应的时段名称（统计页按记录长度推断）。 */
+    /** 某次记录位置对应的时段名称（统计页/小部件按记录长度推断，读取用户自定义文字）。 */
     static String slotName(Context c, int position, int recordLength) {
         int[] order = slotOrder(recordLength);
         if (position < 0 || position >= order.length) {
-            return c.getString(R.string.slot_morning_title);
+            return c.getString(SLOT_TITLES[0]);
         }
-        return c.getString(SLOT_TITLES[order[position]]);
+        return getSlotTitle(c, order[position]);
+    }
+
+    // ---------- 自定义文字（通用打卡） ----------
+
+    /** 顶部大标题（默认与应用名一致）。 */
+    static String getMainTitle(Context c) {
+        String v = prefs(c).getString(KEY_MAIN_TITLE, null);
+        return v == null || v.trim().isEmpty() ? c.getString(R.string.header_greeting) : v.trim();
+    }
+
+    /** 底部提示语（默认通用文案）。 */
+    static String getHintText(Context c) {
+        String v = prefs(c).getString(KEY_HINT_TEXT, null);
+        return v == null || v.trim().isEmpty() ? c.getString(R.string.hint_note) : v.trim();
+    }
+
+    /** 第 slotIdx 个时段（0~5）的卡片标题（读用户自定义，缺省用通用默认）。 */
+    static String getSlotTitle(Context c, int slotIdx) {
+        String v = prefs(c).getString("slot_title_" + slotIdx, null);
+        return v == null || v.trim().isEmpty()
+                ? c.getString(SLOT_TITLES[slotIdx]) : v.trim();
+    }
+
+    /** 第 slotIdx 个时段（0~5）的时间副标题（读用户自定义，缺省用通用默认）。 */
+    static String getSlotTime(Context c, int slotIdx) {
+        String v = prefs(c).getString("slot_time_" + slotIdx, null);
+        return v == null || v.trim().isEmpty()
+                ? c.getString(SLOT_TIMES[slotIdx]) : v.trim();
+    }
+
+    /** 保存全部自定义文字，随后刷新页面与小部件。 */
+    static void saveCustomTexts(Context c, String mainTitle, String hint,
+                                String[] titles, String[] times) {
+        SharedPreferences.Editor ed = prefs(c).edit();
+        ed.putString(KEY_MAIN_TITLE, mainTitle == null ? "" : mainTitle.trim());
+        ed.putString(KEY_HINT_TEXT, hint == null ? "" : hint.trim());
+        for (int i = 0; i < MAX_SLOTS; i++) {
+            ed.putString("slot_title_" + i, titles == null || i >= titles.length || titles[i] == null
+                    ? "" : titles[i].trim());
+            ed.putString("slot_time_" + i, times == null || i >= times.length || times[i] == null
+                    ? "" : times[i].trim());
+        }
+        ed.apply();
+        MedWidgetProvider.updateAll(c);
     }
 
     private final ActivityResultLauncher<PickVisualMediaRequest> pickHeaderLauncher =
@@ -304,14 +352,17 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         headerImage = findViewById(R.id.headerImage);
         headerCard = findViewById(R.id.headerCard);
+        headerTitle = findViewById(R.id.headerTitle);
+        hintText = findViewById(R.id.hintText);
         confetti = findViewById(R.id.confetti);
         findViewById(R.id.btnStats).setOnClickListener(v ->
                 startActivity(new Intent(this, StatsActivity.class)));
         findViewById(R.id.btnSettings).setOnClickListener(v -> showSettingsSheet());
 
-        // 单击头图：直接选照片并裁剪；长按：打开个性化面板
-        headerCard.setOnClickListener(v -> pickHeaderPhoto());
-        headerCard.setOnLongClickListener(v -> {
+        // 只有严格点击图片本身才更换照片；长按图片打开个性化面板；
+        // 点击日期/进度/已完成、图片周围空白区域均不响应
+        headerImage.setOnClickListener(v -> pickHeaderPhoto());
+        headerImage.setOnLongClickListener(v -> {
             showSettingsSheet();
             return true;
         });
@@ -423,8 +474,83 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout slotContainer = sheet.findViewById(R.id.slotContainer);
         buildSlotSwatches(slotContainer, dialog);
 
+        sheet.findViewById(R.id.btnEditTexts).setOnClickListener(v -> {
+            dialog.dismiss();
+            showTextSettings();
+        });
+
         TextView aboutAuthor = sheet.findViewById(R.id.aboutAuthor);
         aboutAuthor.setText(getString(R.string.about_author_format, BuildConfig.VERSION_NAME));
+
+        dialog.show();
+    }
+
+    /** 文字编辑弹窗：大标题 + 6 张卡片(标题/时间) + 底部提示语，保存后全端同步。 */
+    private void showTextSettings() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View sheet = LayoutInflater.from(this).inflate(R.layout.text_settings_sheet, null, false);
+        dialog.setContentView(sheet);
+
+        com.google.android.material.textfield.TextInputEditText editMainTitle =
+                sheet.findViewById(R.id.editMainTitle);
+        editMainTitle.setText(getMainTitle(this));
+        com.google.android.material.textfield.TextInputEditText editHint =
+                sheet.findViewById(R.id.editHintText);
+        editHint.setText(getHintText(this));
+
+        LinearLayout slotBox = sheet.findViewById(R.id.textSlotContainer);
+        final com.google.android.material.textfield.TextInputEditText[] titleEdits =
+                new com.google.android.material.textfield.TextInputEditText[MAX_SLOTS];
+        final com.google.android.material.textfield.TextInputEditText[] timeEdits =
+                new com.google.android.material.textfield.TextInputEditText[MAX_SLOTS];
+
+        for (int i = 0; i < MAX_SLOTS; i++) {
+            LinearLayout group = new LinearLayout(this);
+            group.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout.LayoutParams groupLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (i > 0) groupLp.topMargin = dp(10);
+            slotBox.addView(group, groupLp);
+
+            TextView label = new TextView(this);
+            label.setText(getString(R.string.text_slot_label, i + 1));
+            label.setTextSize(13);
+            label.setTextColor(ThemeUtil.colorOnSurfaceVariant(this));
+            group.addView(label);
+
+            com.google.android.material.textfield.TextInputEditText titleEt =
+                    new com.google.android.material.textfield.TextInputEditText(this);
+            titleEt.setHint(getString(R.string.text_slot_title_hint));
+            titleEt.setMaxLines(1);
+            titleEt.setText(getSlotTitle(this, i));
+            titleEdits[i] = titleEt;
+            group.addView(titleEt, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            com.google.android.material.textfield.TextInputEditText timeEt =
+                    new com.google.android.material.textfield.TextInputEditText(this);
+            timeEt.setHint(getString(R.string.text_slot_time_hint));
+            timeEt.setMaxLines(1);
+            timeEt.setText(getSlotTime(this, i));
+            timeEdits[i] = timeEt;
+            group.addView(timeEt, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
+
+        sheet.findViewById(R.id.btnSaveTexts).setOnClickListener(v -> {
+            String[] titles = new String[MAX_SLOTS];
+            String[] times = new String[MAX_SLOTS];
+            for (int i = 0; i < MAX_SLOTS; i++) {
+                titles[i] = titleEdits[i].getText() == null ? "" : titleEdits[i].getText().toString();
+                times[i] = timeEdits[i].getText() == null ? "" : timeEdits[i].getText().toString();
+            }
+            String main = editMainTitle.getText() == null ? "" : editMainTitle.getText().toString();
+            String hint = editHint.getText() == null ? "" : editHint.getText().toString();
+            saveCustomTexts(this, main, hint, titles, times);
+            buildRows();
+            refresh();
+            dialog.dismiss();
+        });
 
         dialog.show();
     }
@@ -556,9 +682,10 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < count; i++) {
             View row = inflater.inflate(R.layout.row_medication, rowContainer, false);
             final int slot = i;
-            ((ImageView) row.findViewById(R.id.icon)).setImageResource(SLOT_ICONS[order[i]]);
-            ((TextView) row.findViewById(R.id.title)).setText(SLOT_TITLES[order[i]]);
-            ((TextView) row.findViewById(R.id.time)).setText(SLOT_TIMES[order[i]]);
+            int preset = order[i];
+            ((ImageView) row.findViewById(R.id.icon)).setImageResource(SLOT_ICONS[preset]);
+            ((TextView) row.findViewById(R.id.title)).setText(getSlotTitle(this, preset));
+            ((TextView) row.findViewById(R.id.time)).setText(getSlotTime(this, preset));
             row.setOnClickListener(v -> toggle(slot));
             rowViews[i] = row;
             rowContainer.addView(row);
@@ -613,6 +740,8 @@ public class MainActivity extends AppCompatActivity {
         String date = new SimpleDateFormat("M月d日 EEEE", Locale.CHINA).format(Calendar.getInstance().getTime());
         dateText.setText(date);
         streakText.setText(getString(R.string.streak_format, prefs(this).getInt(KEY_STREAK, 0)));
+        headerTitle.setText(getMainTitle(this));
+        hintText.setText(getHintText(this));
 
         int done = 0;
         int count = slotCount();

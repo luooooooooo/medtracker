@@ -19,14 +19,11 @@
             android:paddingTop="24dp"
             android:paddingBottom="32dp">
 
-            <!-- 头部：头图（可自定义） + 标题 + 连续打卡 -->
+            <!-- 头部：头图（仅点击图片本身可更换） + 标题 + 连续打卡 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/headerCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
@@ -71,6 +68,7 @@
                         android:orientation="horizontal">
 
                         <TextView
+                            android:id="@+id/headerTitle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -204,6 +202,7 @@
                 android:orientation="vertical" />
 
             <TextView
+                android:id="@+id/hintText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"

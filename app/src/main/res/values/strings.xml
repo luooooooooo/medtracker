@@ -47,9 +47,9 @@
     <string name="text_slot_time_hint">时间副标题</string>
     <string name="text_save">保存</string>
     <string name="settings_icon_section">桌面图标</string>
-    <string name="icon_choose_from_album">从相册选择</string>
     <string name="icon_updated">桌面图标已更新</string>
-    <string name="icon_shortcut_added">已添加自定义图标到桌面</string>
-    <string name="icon_shortcut_failed">当前桌面不支持添加自定义图标</string>
+    <string name="icon_custom_set">已设置为桌面图标，下次打开应用时更新到桌面</string>
+    <string name="icon_custom_deleted">已删除该自定义图标</string>
+    <string name="icon_tip">点击"添加"可从相册选图并裁剪为 1:1 图标；点击已填充图标可设为桌面图标（下次打开应用生效），长按可删除</string>
     <string name="icon_shortcut_label">打卡了吗？</string>
 </resources>

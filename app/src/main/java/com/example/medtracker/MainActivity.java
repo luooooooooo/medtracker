@@ -28,17 +28,12 @@ import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
-import androidx.core.content.pm.ShortcutInfoCompat;
-import androidx.core.content.pm.ShortcutManagerCompat;
-import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -165,6 +160,9 @@ public class MainActivity extends AppCompatActivity {
         MedWidgetProvider.updateAll(c);
     }
 
+    /** 当前正在裁剪填充的自定义槽位。 */
+    private int pendingIconSlot = -1;
+
     private final ActivityResultLauncher<PickVisualMediaRequest> pickHeaderLauncher =
             registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
                 if (uri != null) {
@@ -172,11 +170,23 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-    /** 从相册选图作为自定义桌面图标：选图后自动生成桌面快捷方式。 */
-    private final ActivityResultLauncher<PickVisualMediaRequest> pickLauncherIconLauncher =
+    /** 自定义图标：相册选图（对应待填充槽位）。 */
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickIconPhotoLauncher =
             registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
                 if (uri != null) {
-                    createLauncherShortcut(uri);
+                    startCropForIcon(uri, pendingIconSlot);
+                }
+            });
+
+    /** 自定义图标：1:1 裁剪结果回调。 */
+    private final ActivityResultLauncher<Intent> cropIconLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && pendingIconSlot >= 0) {
+                    int slot = pendingIconSlot;
+                    IconManager.finalizeCustomIcon(this, slot);
+                    IconManager.setCustomActive(this, slot);
+                    Toast.makeText(this,
+                            R.string.icon_custom_set, Toast.LENGTH_LONG).show();
                 }
             });
 
@@ -360,6 +370,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 恢复用户持久化的桌面图标选择（覆盖安装后仍保持）
         IconManager.applyPersisted(this);
+        // 若用户设置了自定义生效图标，在本次启动时请求系统添加到桌面
+        IconManager.applyPendingCustom(this);
 
         rowContainer = findViewById(R.id.rowContainer);
         dateText = findViewById(R.id.dateText);
@@ -490,10 +502,6 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout iconContainer = sheet.findViewById(R.id.iconContainer);
         buildIconSwatches(iconContainer, dialog);
-        sheet.findViewById(R.id.btnPickLauncherIcon).setOnClickListener(v -> {
-            dialog.dismiss();
-            pickLauncherIcon();
-        });
 
         LinearLayout slotContainer = sheet.findViewById(R.id.slotContainer);
         buildSlotSwatches(slotContainer, dialog);
@@ -687,64 +695,112 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+
+        // 自定义槽位：10 个（空槽显示 +，已填充显示图片）
+        for (int i = 0; i < IconManager.CUSTOM_SLOTS; i++) {
+            final int slot = i;
+            boolean filled = IconManager.hasCustom(this, i);
+            boolean selected = IconManager.isCustomActive(this, i);
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setGravity(Gravity.CENTER_HORIZONTAL);
+            LinearLayout.LayoutParams itemLp = new LinearLayout.LayoutParams(dp(74), size + dp(30));
+            container.addView(item, itemLp);
+
+            FrameLayout circle = new FrameLayout(this);
+            int circleSize = size;
+            LinearLayout.LayoutParams circleLp = new LinearLayout.LayoutParams(circleSize, circleSize);
+            circleLp.setMargins(dp(8), dp(4), dp(8), 0);
+            item.addView(circle, circleLp);
+
+            GradientDrawable ring = new GradientDrawable();
+            ring.setShape(GradientDrawable.OVAL);
+            ring.setColor(ThemeUtil.colorSurface(this));
+            if (selected) {
+                ring.setStroke(dp(3), ThemeUtil.colorPrimary(this));
+            } else {
+                // 未选中（空槽/已填充）：细描边
+                ring.setStroke(dp(1), ThemeUtil.colorOutlineVariant(this));
+            }
+            circle.setBackground(ring);
+
+            int inner = dp(6);
+            if (filled) {
+                ImageView icon = new ImageView(this);
+                icon.setImageBitmap(BitmapFactory.decodeFile(IconManager.customPath(this, i)));
+                icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                icon.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(View view, android.graphics.Outline outline) {
+                        outline.setOval(0, 0, view.getWidth(), view.getHeight());
+                    }
+                });
+                icon.setClipToOutline(true);
+                circle.addView(icon, new FrameLayout.LayoutParams(
+                        circleSize - inner * 2, circleSize - inner * 2, Gravity.CENTER));
+            } else {
+                TextView plus = new TextView(this);
+                plus.setText("＋");
+                plus.setTextSize(26);
+                plus.setGravity(Gravity.CENTER);
+                plus.setTextColor(ThemeUtil.colorOnSurfaceVariant(this));
+                circle.addView(plus, new FrameLayout.LayoutParams(
+                        circleSize - inner * 2, circleSize - inner * 2, Gravity.CENTER));
+            }
+
+            TextView name = new TextView(this);
+            name.setText(filled ? "自定义" + (i + 1) : "添加");
+            name.setTextSize(12);
+            name.setTextColor(selected
+                    ? ThemeUtil.colorPrimary(this)
+                    : ThemeUtil.colorOnSurfaceVariant(this));
+            name.setGravity(Gravity.CENTER);
+            item.addView(name, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            item.setClickable(true);
+            item.setFocusable(true);
+            item.setOnClickListener(v -> {
+                if (!filled) {
+                    // 空槽：相册选图 → 1:1 裁剪
+                    dialog.dismiss();
+                    pickIconForSlot(slot);
+                } else if (!selected) {
+                    // 已填充：设为当前生效（下次启动时更新到桌面）
+                    IconManager.setCustomActive(this, slot);
+                    Toast.makeText(this, R.string.icon_custom_set, Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
+                }
+            });
+            item.setOnLongClickListener(v -> {
+                // 长按已填充槽位：删除该自定义图标
+                if (filled) {
+                    IconManager.deleteCustom(this, slot);
+                    Toast.makeText(this, R.string.icon_custom_deleted, Toast.LENGTH_SHORT).show();
+                    buildIconSwatches(container, dialog);
+                }
+                return true;
+            });
+        }
     }
 
-    /** 相册选图作为自定义桌面图标（生成桌面快捷方式，官方唯一支持任意图片的途径）。 */
-    private void pickLauncherIcon() {
-        pickLauncherIconLauncher.launch(new PickVisualMediaRequest.Builder()
+    /** 自定义图标：相册选图 → 进入 1:1 裁剪界面（与头图裁剪一致）。 */
+    private void pickIconForSlot(int slot) {
+        pendingIconSlot = slot;
+        pickIconPhotoLauncher.launch(new PickVisualMediaRequest.Builder()
                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                 .build());
     }
 
-    /** 把相册图片处理成自适应图标（中央 66% 安全区）并请求系统钉到桌面。 */
-    private void createLauncherShortcut(Uri sourceUri) {
-        try {
-            Bitmap bmp = BitmapFactory.decodeStream(
-                    getContentResolver().openInputStream(sourceUri));
-            if (bmp == null) return;
-            // 居中裁剪为正方形，再缩小到安全区内容 128x128
-            int side = Math.min(bmp.getWidth(), bmp.getHeight());
-            Bitmap square = Bitmap.createBitmap(bmp,
-                    (bmp.getWidth() - side) / 2, (bmp.getHeight() - side) / 2, side, side);
-            Bitmap content = Bitmap.createScaledBitmap(square, 128, 128, true);
-            if (square != bmp) square.recycle();
-            bmp.recycle();
-
-            // 192x192 透明画布，内容居中（适配系统图标遮罩的安全区）
-            Bitmap adaptive = Bitmap.createBitmap(192, 192, Bitmap.Config.ARGB_8888);
-            android.graphics.Canvas canvas = new android.graphics.Canvas(adaptive);
-            canvas.drawBitmap(content, (192 - 128) / 2f, (192 - 128) / 2f, null);
-            content.recycle();
-
-            File dest = new File(getFilesDir(), "launcher_custom.png");
-            if (dest.exists()) dest.delete();
-            try (FileOutputStream out = new FileOutputStream(dest)) {
-                adaptive.compress(Bitmap.CompressFormat.PNG, 100, out);
-            }
-            adaptive.recycle();
-
-            Uri iconUri = FileProvider.getUriForFile(this,
-                    getPackageName() + ".fileprovider", dest);
-            IconCompat icon = IconCompat.createWithAdaptiveBitmap(
-                    BitmapFactory.decodeStream(getContentResolver().openInputStream(iconUri)));
-
-            Intent launch = new Intent(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_LAUNCHER)
-                    .setComponent(new android.content.ComponentName(this, MainActivity.class));
-
-            ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(this, "launcher_custom")
-                    .setShortLabel(getString(R.string.icon_shortcut_label))
-                    .setIcon(icon)
-                    .setIntent(launch)
-                    .build();
-            if (ShortcutManagerCompat.requestPinShortcut(this, shortcut, null)) {
-                Toast.makeText(this, R.string.icon_shortcut_added, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, R.string.icon_shortcut_failed, Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, R.string.pick_header, Toast.LENGTH_SHORT).show();
-        }
+    /** 进入裁剪界面：锁定 1:1 方形裁剪框，输出到槽位文件。 */
+    private void startCropForIcon(Uri sourceUri, int slot) {
+        if (slot < 0) return;
+        pendingIconSlot = slot;
+        Intent it = new Intent(this, CropActivity.class);
+        it.putExtra(CropActivity.EXTRA_SOURCE, sourceUri.toString());
+        it.putExtra(CropActivity.EXTRA_OUTPUT, IconManager.customPath(this, slot));
+        it.putExtra(CropActivity.EXTRA_ASPECT, 1.0);
+        cropIconLauncher.launch(it);
     }
 
     /** 主题色板：2 行 x 5 列，每项为色圆 + 名称，点击切换主题并重建页面。 */

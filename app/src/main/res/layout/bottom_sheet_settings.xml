@@ -99,14 +99,13 @@
             android:orientation="horizontal" />
     </HorizontalScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPickLauncherIcon"
-        style="@style/Widget.Material3.Button.TonalButton"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/icon_choose_from_album"
-        android:textColor="?attr/colorOnSecondaryContainer" />
+        android:layout_marginTop="4dp"
+        android:text="@string/icon_tip"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <View
         android:layout_width="match_parent"

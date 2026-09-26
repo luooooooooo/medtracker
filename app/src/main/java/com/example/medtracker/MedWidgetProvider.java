@@ -107,8 +107,9 @@ public class MedWidgetProvider extends AppWidgetProvider {
         root.setTextViewText(R.id.wProgress, done + " / " + count);
         root.setTextColor(R.id.wProgress, done == count ? primary : 0xFF707B78);
 
-        // 紧凑模式：次数超过 3 但小部件高度只有 1 格（用户尚未拉高）时压缩卡片，避免内容裁切
-        boolean compact = count > 3 && heightDp > 0 && heightDp < 120;
+        // 紧凑模式：小部件高度仅 1 格（或尺寸未知）时压缩卡片，避免文字被裁切；
+        // 拉高到 2 格后自动切换为舒展样式
+        boolean compact = heightDp < 120;
 
         // 行数自适应：1~3 次单行（隐藏第二行），4~6 次双行
         root.setViewVisibility(R.id.wRow2, count <= 3 ? View.GONE : View.VISIBLE);
@@ -124,10 +125,10 @@ public class MedWidgetProvider extends AppWidgetProvider {
 
             root.setTextViewText(NAME_IDS[i], MainActivity.slotName(context, i, count));
             if (compact) {
-                root.setViewPadding(SLOT_IDS[i], 10, 5, 10, 5);
+                root.setViewPadding(SLOT_IDS[i], 10, 4, 10, 4);
                 root.setTextViewTextSize(NAME_IDS[i], android.util.TypedValue.COMPLEX_UNIT_SP, 9f);
             } else {
-                root.setViewPadding(SLOT_IDS[i], 10, 8, 10, 8);
+                root.setViewPadding(SLOT_IDS[i], 10, 7, 10, 7);
                 root.setTextViewTextSize(NAME_IDS[i], android.util.TypedValue.COMPLEX_UNIT_SP, 10f);
             }
             if (taken) {

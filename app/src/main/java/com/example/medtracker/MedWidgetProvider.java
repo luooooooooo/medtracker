@@ -43,6 +43,13 @@ public class MedWidgetProvider extends AppWidgetProvider {
         updateAll(context);
     }
 
+    /** 桌面拖拽/缩放尺寸变化时重绘（保持行数布局正确）。 */
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
+                                          int appWidgetId, android.os.Bundle newOptions) {
+        updateAll(context);
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         if (ACTION_TOGGLE.equals(intent.getAction())) {
@@ -94,7 +101,10 @@ public class MedWidgetProvider extends AppWidgetProvider {
         root.setTextViewText(R.id.wProgress, done + " / " + count);
         root.setTextColor(R.id.wProgress, done == count ? primary : 0xFF707B78);
 
-        // 完整重绘全部 6 个槽位：前 count 个显示并绑定状态，其余隐藏
+        // 行数自适应：1~3 次单行（隐藏第二行），4~6 次双行
+        root.setViewVisibility(R.id.wRow2, count <= 3 ? View.GONE : View.VISIBLE);
+
+        // 完整重绘全部 6 个槽位：前 count 个显示并绑定状态，其余隐藏（GONE 不占空间，可见卡片自动均分）
         for (int i = 0; i < MAX_SLOTS; i++) {
             if (i >= count) {
                 root.setViewVisibility(SLOT_IDS[i], View.GONE);

@@ -21,18 +21,24 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -163,6 +169,14 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
                 if (uri != null) {
                     startCrop(uri);
+                }
+            });
+
+    /** 从相册选图作为自定义桌面图标：选图后自动生成桌面快捷方式。 */
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickLauncherIconLauncher =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                if (uri != null) {
+                    createLauncherShortcut(uri);
                 }
             });
 
@@ -344,6 +358,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         instance = this;
 
+        // 恢复用户持久化的桌面图标选择（覆盖安装后仍保持）
+        IconManager.applyPersisted(this);
+
         rowContainer = findViewById(R.id.rowContainer);
         dateText = findViewById(R.id.dateText);
         streakText = findViewById(R.id.streakText);
@@ -471,6 +488,13 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout themeContainer = sheet.findViewById(R.id.themeContainer);
         buildThemeSwatches(themeContainer, dialog);
 
+        LinearLayout iconContainer = sheet.findViewById(R.id.iconContainer);
+        buildIconSwatches(iconContainer, dialog);
+        sheet.findViewById(R.id.btnPickLauncherIcon).setOnClickListener(v -> {
+            dialog.dismiss();
+            pickLauncherIcon();
+        });
+
         LinearLayout slotContainer = sheet.findViewById(R.id.slotContainer);
         buildSlotSwatches(slotContainer, dialog);
 
@@ -595,6 +619,131 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
                 recreate();
             });
+        }
+    }
+
+    /** 桌面图标选择：6 款内置图标圆形预览，点击立即切换；当前图标高亮描边。 */
+    private void buildIconSwatches(LinearLayout container, BottomSheetDialog dialog) {
+        container.removeAllViews();
+        int current = IconManager.currentIndex(this);
+        int size = dp(52);
+
+        for (int i = 0; i < IconManager.ALIASES.length; i++) {
+            final int index = i;
+            boolean selected = i == current;
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setGravity(Gravity.CENTER_HORIZONTAL);
+            LinearLayout.LayoutParams itemLp = new LinearLayout.LayoutParams(dp(74), size + dp(30));
+            container.addView(item, itemLp);
+
+            // 圆形图标 + 选中描边
+            FrameLayout circle = new FrameLayout(this);
+            int circleSize = size;
+            LinearLayout.LayoutParams circleLp = new LinearLayout.LayoutParams(circleSize, circleSize);
+            circleLp.setMargins(dp(8), dp(4), dp(8), 0);
+            item.addView(circle, circleLp);
+
+            GradientDrawable ring = new GradientDrawable();
+            ring.setShape(GradientDrawable.OVAL);
+            ring.setColor(ThemeUtil.colorSurface(this));
+            if (selected) {
+                ring.setStroke(dp(3), ThemeUtil.colorPrimary(this));
+            } else {
+                ring.setStroke(dp(1), ThemeUtil.colorOutlineVariant(this));
+            }
+            circle.setBackground(ring);
+
+            ImageView icon = new ImageView(this);
+            icon.setImageResource(IconManager.ICON_RES[i]);
+            icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            icon.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, android.graphics.Outline outline) {
+                    outline.setOval(0, 0, view.getWidth(), view.getHeight());
+                }
+            });
+            icon.setClipToOutline(true);
+            int inner = dp(6);
+            circle.addView(icon, new FrameLayout.LayoutParams(circleSize - inner * 2, circleSize - inner * 2, Gravity.CENTER));
+
+            TextView name = new TextView(this);
+            name.setText(IconManager.ICON_NAMES[i]);
+            name.setTextSize(12);
+            name.setTextColor(selected
+                    ? ThemeUtil.colorPrimary(this)
+                    : ThemeUtil.colorOnSurfaceVariant(this));
+            name.setGravity(Gravity.CENTER);
+            item.addView(name, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            item.setClickable(true);
+            item.setFocusable(true);
+            item.setOnClickListener(v -> {
+                if (index != IconManager.currentIndex(this)) {
+                    IconManager.switchIcon(this, index);
+                    Toast.makeText(this, R.string.icon_updated, Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }
+            });
+        }
+    }
+
+    /** 相册选图作为自定义桌面图标（生成桌面快捷方式，官方唯一支持任意图片的途径）。 */
+    private void pickLauncherIcon() {
+        pickLauncherIconLauncher.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
+    }
+
+    /** 把相册图片处理成自适应图标（中央 66% 安全区）并请求系统钉到桌面。 */
+    private void createLauncherShortcut(Uri sourceUri) {
+        try {
+            Bitmap bmp = BitmapFactory.decodeStream(
+                    getContentResolver().openInputStream(sourceUri));
+            if (bmp == null) return;
+            // 居中裁剪为正方形，再缩小到安全区内容 128x128
+            int side = Math.min(bmp.getWidth(), bmp.getHeight());
+            Bitmap square = Bitmap.createBitmap(bmp,
+                    (bmp.getWidth() - side) / 2, (bmp.getHeight() - side) / 2, side, side);
+            Bitmap content = Bitmap.createScaledBitmap(square, 128, 128, true);
+            if (square != bmp) square.recycle();
+            bmp.recycle();
+
+            // 192x192 透明画布，内容居中（适配系统图标遮罩的安全区）
+            Bitmap adaptive = Bitmap.createBitmap(192, 192, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(adaptive);
+            canvas.drawBitmap(content, (192 - 128) / 2f, (192 - 128) / 2f, null);
+            content.recycle();
+
+            File dest = new File(getFilesDir(), "launcher_custom.png");
+            if (dest.exists()) dest.delete();
+            try (FileOutputStream out = new FileOutputStream(dest)) {
+                adaptive.compress(Bitmap.CompressFormat.PNG, 100, out);
+            }
+            adaptive.recycle();
+
+            Uri iconUri = FileProvider.getUriForFile(this,
+                    getPackageName() + ".fileprovider", dest);
+            IconCompat icon = IconCompat.createWithAdaptiveBitmap(
+                    BitmapFactory.decodeStream(getContentResolver().openInputStream(iconUri)));
+
+            Intent launch = new Intent(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_LAUNCHER)
+                    .setComponent(new android.content.ComponentName(this, MainActivity.class));
+
+            ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(this, "launcher_custom")
+                    .setShortLabel(getString(R.string.icon_shortcut_label))
+                    .setIcon(icon)
+                    .setIntent(launch)
+                    .build();
+            if (ShortcutManagerCompat.requestPinShortcut(this, shortcut, null)) {
+                Toast.makeText(this, R.string.icon_shortcut_added, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, R.string.icon_shortcut_failed, Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.pick_header, Toast.LENGTH_SHORT).show();
         }
     }
 

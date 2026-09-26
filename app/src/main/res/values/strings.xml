@@ -46,4 +46,10 @@
     <string name="text_slot_title_hint">卡片标题</string>
     <string name="text_slot_time_hint">时间副标题</string>
     <string name="text_save">保存</string>
+    <string name="settings_icon_section">桌面图标</string>
+    <string name="icon_choose_from_album">从相册选择</string>
+    <string name="icon_updated">桌面图标已更新</string>
+    <string name="icon_shortcut_added">已添加自定义图标到桌面</string>
+    <string name="icon_shortcut_failed">当前桌面不支持添加自定义图标</string>
+    <string name="icon_shortcut_label">打卡了吗？</string>
 </resources>

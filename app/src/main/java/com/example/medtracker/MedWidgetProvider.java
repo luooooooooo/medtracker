@@ -73,17 +73,23 @@ public class MedWidgetProvider extends AppWidgetProvider {
         super.onReceive(context, intent);
     }
 
-    /** 重建所有小部件实例。 */
+    /** 重建所有小部件实例（逐实例读取实际高度，决定紧凑/舒展渲染）。 */
     public static void updateAll(Context context) {
         AppWidgetManager mgr = AppWidgetManager.getInstance(context);
         int[] ids = mgr.getAppWidgetIds(new ComponentName(context, MedWidgetProvider.class));
         for (int id : ids) {
-            mgr.updateAppWidget(id, buildViews(context));
+            int heightDp = 0;
+            try {
+                android.os.Bundle options = mgr.getAppWidgetOptions(id);
+                heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+            } catch (Exception ignored) {
+            }
+            mgr.updateAppWidget(id, buildViews(context, heightDp));
         }
     }
 
     /** 按当前日期/次数/打卡状态构建小部件视图（固定槽位，完整重绘）。 */
-    private static RemoteViews buildViews(Context context) {
+    private static RemoteViews buildViews(Context context, int heightDp) {
         MainActivity.rolloverIfNeeded(context);
 
         RemoteViews root = new RemoteViews(context.getPackageName(), R.layout.widget_medication);
@@ -101,6 +107,9 @@ public class MedWidgetProvider extends AppWidgetProvider {
         root.setTextViewText(R.id.wProgress, done + " / " + count);
         root.setTextColor(R.id.wProgress, done == count ? primary : 0xFF707B78);
 
+        // 紧凑模式：次数超过 3 但小部件高度只有 1 格（用户尚未拉高）时压缩卡片，避免内容裁切
+        boolean compact = count > 3 && heightDp > 0 && heightDp < 120;
+
         // 行数自适应：1~3 次单行（隐藏第二行），4~6 次双行
         root.setViewVisibility(R.id.wRow2, count <= 3 ? View.GONE : View.VISIBLE);
 
@@ -114,6 +123,13 @@ public class MedWidgetProvider extends AppWidgetProvider {
             boolean taken = MainActivity.isTaken(context, i);
 
             root.setTextViewText(NAME_IDS[i], MainActivity.slotName(context, i, count));
+            if (compact) {
+                root.setViewPadding(SLOT_IDS[i], 10, 5, 10, 5);
+                root.setTextViewTextSize(NAME_IDS[i], android.util.TypedValue.COMPLEX_UNIT_SP, 9f);
+            } else {
+                root.setViewPadding(SLOT_IDS[i], 10, 8, 10, 8);
+                root.setTextViewTextSize(NAME_IDS[i], android.util.TypedValue.COMPLEX_UNIT_SP, 10f);
+            }
             if (taken) {
                 root.setImageViewResource(ICON_IDS[i], R.drawable.ic_check);
                 root.setInt(ICON_IDS[i], "setColorFilter", primary);

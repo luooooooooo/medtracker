@@ -185,6 +185,8 @@ public class MainActivity extends AppCompatActivity {
                     int slot = pendingIconSlot;
                     IconManager.finalizeCustomIcon(this, slot);
                     IconManager.setCustomActive(this, slot);
+                    // 立即请求系统添加到桌面（系统弹确认框）
+                    IconManager.requestPinNow(this, slot);
                     Toast.makeText(this,
                             R.string.icon_custom_set, Toast.LENGTH_LONG).show();
                 }
@@ -766,8 +768,9 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                     pickIconForSlot(slot);
                 } else if (!selected) {
-                    // 已填充：设为当前生效（下次启动时更新到桌面）
+                    // 已填充：设为当前生效，并立即请求添加到桌面
                     IconManager.setCustomActive(this, slot);
+                    IconManager.requestPinNow(this, slot);
                     Toast.makeText(this, R.string.icon_custom_set, Toast.LENGTH_LONG).show();
                     dialog.dismiss();
                 }

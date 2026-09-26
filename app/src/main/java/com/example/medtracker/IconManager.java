@@ -138,19 +138,15 @@ public final class IconManager {
     }
 
     /**
-     * 下次启动时调用：若用户设置了自定义生效图标，则请求系统把该图片
-     * 以官方快捷方式通道添加到桌面（仅请求一次，被拒后不再弹窗）。
+     * 立即请求系统把槽位 i 的图片以官方快捷方式通道添加到桌面（系统弹确认框）。
+     * 无论系统是否支持/是否被拒，都清除 pending，避免后续启动重复弹窗。
      */
-    static void applyPendingCustom(Context c) {
-        if (!prefs(c).getBoolean(KEY_CUSTOM_PENDING, false)) {
-            return;
-        }
-        int active = prefs(c).getInt(KEY_CUSTOM_ACTIVE, -1);
+    static void requestPinNow(Context c, int i) {
         prefs(c).edit().putBoolean(KEY_CUSTOM_PENDING, false).apply();
-        if (active < 0 || active >= CUSTOM_SLOTS) {
+        if (i < 0 || i >= CUSTOM_SLOTS) {
             return;
         }
-        File f = new File(customPath(c, active));
+        File f = new File(customPath(c, i));
         if (!f.exists()) {
             return;
         }
@@ -164,7 +160,7 @@ public final class IconManager {
             Intent launch = new Intent(Intent.ACTION_MAIN)
                     .addCategory(Intent.CATEGORY_LAUNCHER)
                     .setComponent(new ComponentName(c, MainActivity.class));
-            ShortcutInfoCompat si = new ShortcutInfoCompat.Builder(c, "launcher_custom_" + active)
+            ShortcutInfoCompat si = new ShortcutInfoCompat.Builder(c, "launcher_custom_" + i)
                     .setShortLabel(c.getString(R.string.icon_shortcut_label))
                     .setIcon(icon)
                     .setIntent(launch)
@@ -172,6 +168,18 @@ public final class IconManager {
             ShortcutManagerCompat.requestPinShortcut(c, si, null);
         } catch (Exception ignored) {
         }
+    }
+
+    /**
+     * 下次启动时调用（兜底）：若之前"设为当前"后未能在当次完成请求，
+     * 在此补一次；正常流程下 pending 已为 false，不会重复弹窗。
+     */
+    static void applyPendingCustom(Context c) {
+        if (!prefs(c).getBoolean(KEY_CUSTOM_PENDING, false)) {
+            return;
+        }
+        int active = prefs(c).getInt(KEY_CUSTOM_ACTIVE, -1);
+        requestPinNow(c, active);
     }
 
     /** 把裁剪结果（1:1 JPEG）转换成自适应图标位图（中央 66% 安全区）并覆盖保存。 */

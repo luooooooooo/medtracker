@@ -100,13 +100,14 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- 全透明图标：切换后应用本体图标不可见，可隐藏桌面快捷方式的右下角角标 -->
+        <!-- 全透明图标：直接引用全透明 PNG（传统图标，不走自适应图标），
+             切换后应用本体图标在桌面真正不可见，可隐藏自定义图标的右下角角标 -->
         <activity-alias
             android:name=".icon_invisible"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_invisible"
-            android:roundIcon="@mipmap/ic_launcher_invisible"
+            android:icon="@drawable/ic_launcher_invisible_fg"
+            android:roundIcon="@drawable/ic_launcher_invisible_fg"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>

@@ -42,7 +42,7 @@ public final class IconManager {
             R.mipmap.ic_launcher_chiikawa, R.mipmap.ic_launcher_hachiware,
             R.mipmap.ic_launcher_usagi, R.mipmap.ic_launcher_pill,
             R.mipmap.ic_launcher_mint, R.mipmap.ic_launcher_heart,
-            R.mipmap.ic_launcher_invisible
+            R.drawable.ic_launcher_invisible_fg
     };
 
     /** 图标中文名。 */

@@ -31,25 +31,26 @@ public final class IconManager {
     private static final String KEY_CUSTOM_ACTIVE = "launcher_custom_active";
     private static final String KEY_CUSTOM_PENDING = "launcher_custom_pending";
 
-    /** 6 套内置图标的 alias 名（与 AndroidManifest activity-alias 一一对应）。 */
+    /** 7 套内置图标的 alias 名（与 AndroidManifest activity-alias 一一对应）。 */
     static final String[] ALIASES = {
             "icon_chiikawa", "icon_hachiware", "icon_usagi",
-            "icon_pill", "icon_mint", "icon_heart"
+            "icon_pill", "icon_mint", "icon_heart", "icon_invisible"
     };
 
     /** 设置面板预览用的图标资源。 */
     static final int[] ICON_RES = {
             R.mipmap.ic_launcher_chiikawa, R.mipmap.ic_launcher_hachiware,
             R.mipmap.ic_launcher_usagi, R.mipmap.ic_launcher_pill,
-            R.mipmap.ic_launcher_mint, R.mipmap.ic_launcher_heart
+            R.mipmap.ic_launcher_mint, R.mipmap.ic_launcher_heart,
+            R.mipmap.ic_launcher_invisible
     };
 
     /** 图标中文名。 */
     static final String[] ICON_NAMES = {
-            "吉伊", "小八", "乌萨奇", "药丸精灵", "薄荷圆点", "奶油爱心"
+            "吉伊", "小八", "乌萨奇", "药丸精灵", "薄荷圆点", "奶油爱心", "透明"
     };
 
-    /** 自定义图标槽位数（内置 6 款之后追加）。 */
+    /** 自定义图标槽位数（内置 7 款之后追加）。 */
     static final int CUSTOM_SLOTS = 10;
 
     private IconManager() {

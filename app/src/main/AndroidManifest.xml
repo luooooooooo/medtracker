@@ -100,14 +100,28 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- 全透明图标：直接引用全透明 PNG（传统图标，不走自适应图标），
-             切换后应用本体图标在桌面真正不可见，可隐藏自定义图标的右下角角标 -->
+        <!-- 隐形白：纯白圆角底，与 OPPO/vivo 桌面图标底座外观一致（桌面不允许真透明） -->
         <activity-alias
             android:name=".icon_invisible"
             android:enabled="false"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_invisible_fg"
-            android:roundIcon="@drawable/ic_launcher_invisible_fg"
+            android:icon="@drawable/ic_launcher_white_fg"
+            android:roundIcon="@drawable/ic_launcher_white_fg"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- 隐形黑：纯黑圆角底，适配深色桌面/壁纸 -->
+        <activity-alias
+            android:name=".icon_black"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_black_fg"
+            android:roundIcon="@drawable/ic_launcher_black_fg"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>

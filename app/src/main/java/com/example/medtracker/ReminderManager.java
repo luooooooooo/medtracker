@@ -128,6 +128,11 @@ public final class ReminderManager {
 
     // ---------- 系统日历 ----------
 
+    /** 该槽位在系统日历中的事件标题（按槽位独立，互不覆盖）。 */
+    static String calendarEventTitle(Context c, int slot) {
+        return c.getString(R.string.cal_event_title) + " · " + slot;
+    }
+
     /** 把槽位提醒写入系统日历（每天重复，到点提醒）。返回是否成功。 */
     static boolean writeCalendarEvent(Context c, int slot, int hour, int minute) {
         ContentResolver cr = c.getContentResolver();
@@ -136,16 +141,20 @@ public final class ReminderManager {
             if (calId < 0) {
                 return false;
             }
-            String title = c.getString(R.string.cal_event_title);
-            // 先删除该应用的旧提醒事件，避免重复
+            String title = calendarEventTitle(c, slot);
+            // 只删除该槽位自己的旧提醒事件，避免误删其他卡片
             cr.delete(CalendarContract.Events.CONTENT_URI,
                     CalendarContract.Events.TITLE + "=?", new String[]{title});
 
+            // 若今天该时间已过，事件从明天开始（与闹钟逻辑一致）
             Calendar start = Calendar.getInstance();
             start.set(Calendar.HOUR_OF_DAY, hour);
             start.set(Calendar.MINUTE, minute);
             start.set(Calendar.SECOND, 0);
             start.set(Calendar.MILLISECOND, 0);
+            if (start.getTimeInMillis() <= System.currentTimeMillis()) {
+                start.add(Calendar.DAY_OF_YEAR, 1);
+            }
             long startMs = start.getTimeInMillis();
             long endMs = startMs + 5 * 60 * 1000L;
 
@@ -176,23 +185,23 @@ public final class ReminderManager {
         }
     }
 
-    /** 删除写入系统日历的提醒事件。 */
-    static void deleteCalendarEvent(Context c) {
+    /** 删除指定槽位写入系统日历的提醒事件。 */
+    static void deleteCalendarEvent(Context c, int slot) {
         try {
             c.getContentResolver().delete(CalendarContract.Events.CONTENT_URI,
                     CalendarContract.Events.TITLE + "=?",
-                    new String[]{c.getString(R.string.cal_event_title)});
+                    new String[]{calendarEventTitle(c, slot)});
         } catch (Exception ignored) {
         }
     }
 
-    /** 找一个可写日历；找不到返回 -1。 */
+    /** 找一个可写日历；优先可写级别较高的，其次任意可见日历；找不到返回 -1。 */
     private static long findWritableCalendarId(ContentResolver cr) {
-        try (Cursor cur = cr.query(
-                CalendarContract.Calendars.CONTENT_URI,
-                new String[]{CalendarContract.Calendars._ID,
-                        CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL},
-                CalendarContract.Calendars.VISIBLE + " = 1", null, null)) {
+        String[] cols = new String[]{CalendarContract.Calendars._ID,
+                CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL};
+        // 第一遍：可见且可写
+        try (Cursor cur = cr.query(CalendarContract.Calendars.CONTENT_URI,
+                cols, CalendarContract.Calendars.VISIBLE + " = 1", null, null)) {
             if (cur != null) {
                 while (cur.moveToNext()) {
                     long id = cur.getLong(0);
@@ -201,6 +210,15 @@ public final class ReminderManager {
                         return id;
                     }
                 }
+            }
+        } catch (Exception ignored) {
+        }
+        // 第二遍：任意可见日历（部分 ROM 访问级别字段异常，放宽兜底）
+        try (Cursor cur = cr.query(CalendarContract.Calendars.CONTENT_URI,
+                new String[]{CalendarContract.Calendars._ID},
+                CalendarContract.Calendars.VISIBLE + " = 1", null, null)) {
+            if (cur != null && cur.moveToFirst()) {
+                return cur.getLong(0);
             }
         } catch (Exception ignored) {
         }

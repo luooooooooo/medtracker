@@ -871,8 +871,8 @@ public class MainActivity extends AppCompatActivity {
         rowContainer.removeAllViews();
         for (int i = 0; i < count; i++) {
             View row = inflater.inflate(R.layout.row_medication, rowContainer, false);
-            final int slot = i;
-            int preset = order[i];
+            final int pos = i;
+            final int preset = order[i];
             ((ImageView) row.findViewById(R.id.icon)).setImageResource(SLOT_ICONS[preset]);
             ((TextView) row.findViewById(R.id.title)).setText(getSlotTitle(this, preset));
             TextView timeView = row.findViewById(R.id.time);
@@ -883,9 +883,9 @@ public class MainActivity extends AppCompatActivity {
                 timeView.setText(timeText);
                 timeView.setVisibility(View.VISIBLE);
             }
-            row.setOnClickListener(v -> toggle(slot));
+            row.setOnClickListener(v -> toggle(pos));
             row.setOnLongClickListener(v -> {
-                showSlotMenu(slot);
+                showSlotMenu(preset);
                 return true;
             });
             rowViews[i] = row;
@@ -915,7 +915,7 @@ public class MainActivity extends AppCompatActivity {
                     } else if (getString(R.string.menu_clear_reminder).equals(item)) {
                         ReminderManager.clearReminder(this, slot);
                         ReminderManager.cancelSlot(this, slot);
-                        ReminderManager.deleteCalendarEvent(this);
+                        ReminderManager.deleteCalendarEvent(this, slot);
                         buildRows();
                         refresh();
                         Toast.makeText(this, R.string.reminder_cleared,
@@ -968,7 +968,7 @@ public class MainActivity extends AppCompatActivity {
         reminderPermsLauncher.launch(perms.toArray(new String[0]));
     }
 
-    /** 权限结果就绪后：写入系统日历（若有权限）+ 安排闹钟 + 提示。 */
+    /** 权限结果就绪后：写入系统日历（成功/失败明确提示）+ 安排闹钟。 */
     private void applyReminderAfterPermission(int slot) {
         if (slot < 0) {
             return;
@@ -979,22 +979,46 @@ public class MainActivity extends AppCompatActivity {
                 ReminderManager.getHour(this, slot),
                 ReminderManager.getMinute(this, slot));
         if (cal) {
-            ReminderManager.writeCalendarEvent(this, slot,
+            boolean ok = ReminderManager.writeCalendarEvent(this, slot,
                     ReminderManager.getHour(this, slot),
                     ReminderManager.getMinute(this, slot));
-            Toast.makeText(this,
-                    getString(R.string.reminder_set_done, time),
-                    Toast.LENGTH_LONG).show();
+            if (ok) {
+                Toast.makeText(this,
+                        getString(R.string.reminder_set_done, time),
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this,
+                        getString(R.string.reminder_set_cal_fail, time),
+                        Toast.LENGTH_LONG).show();
+            }
         } else {
             Toast.makeText(this,
                     getString(R.string.reminder_set_no_cal, time),
                     Toast.LENGTH_LONG).show();
+            // 引导用户去系统设置开启日历权限
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.reminder_perm_title)
+                    .setMessage(R.string.reminder_perm_guide)
+                    .setPositiveButton(R.string.reminder_go_settings,
+                            (d, w) -> openAppSettings())
+                    .setNegativeButton(R.string.text_cancel, null)
+                    .show();
         }
         ReminderManager.ensureChannel(this);
         ReminderManager.scheduleSlot(this, slot);
         // 时间行与提醒同步显示
         buildRows();
         refresh();
+    }
+
+    /** 打开本应用的系统设置页（用于手动开启权限）。 */
+    private void openAppSettings() {
+        try {
+            Intent it = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getPackageName()));
+            startActivity(it);
+        } catch (Exception ignored) {
+        }
     }
 
     private int slotCount() {

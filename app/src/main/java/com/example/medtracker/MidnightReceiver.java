@@ -13,6 +13,7 @@ public class MidnightReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         MainActivity.rolloverIfNeeded(context);
         MainActivity.scheduleMidnightAlarm(context);
+        ReminderManager.scheduleAll(context);
         MedWidgetProvider.updateAll(context);
 
         MainActivity activity = MainActivity.getInstance();

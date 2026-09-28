@@ -1,11 +1,14 @@
 package com.example.medtracker;
 
 import android.animation.ObjectAnimator;
+import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.GradientDrawable;
@@ -31,12 +34,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -55,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_HINT_TEXT = "hint_text";
     private static final String ACTION_MIDNIGHT = "com.example.medtracker.MIDNIGHT";
 
-    private static final int MAX_SLOTS = 6;
+    static final int MAX_SLOTS = 6;
     private static final String[] SLOT_KEYS = {KEY_MORNING, KEY_NOON, KEY_EVENING};
     private static final String HEADER_CROP_FILE = "header_crop.jpg";
 
@@ -191,6 +197,18 @@ public class MainActivity extends AppCompatActivity {
                             R.string.icon_custom_set, Toast.LENGTH_LONG).show();
                 }
             });
+
+    /** 当前正在设置提醒的槽位。 */
+    private int pendingReminderSlot = -1;
+
+    /** 提醒权限请求结果回调（日历 + 通知）。 */
+    private final ActivityResultLauncher<String[]> reminderPermsLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.RequestMultiplePermissions(), granted -> {
+                        if (pendingReminderSlot >= 0) {
+                            applyReminderAfterPermission(pendingReminderSlot);
+                        }
+                    });
 
     @Nullable
     public static MainActivity getInstance() {
@@ -375,6 +393,10 @@ public class MainActivity extends AppCompatActivity {
         // 若用户设置了自定义生效图标，在本次启动时请求系统添加到桌面
         IconManager.applyPendingCustom(this);
 
+        // 打卡提醒：确保通知渠道存在，并重排全部已开启的提醒
+        ReminderManager.ensureChannel(this);
+        ReminderManager.scheduleAll(this);
+
         rowContainer = findViewById(R.id.rowContainer);
         dateText = findViewById(R.id.dateText);
         streakText = findViewById(R.id.streakText);
@@ -507,11 +529,6 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout slotContainer = sheet.findViewById(R.id.slotContainer);
         buildSlotSwatches(slotContainer, dialog);
-
-        sheet.findViewById(R.id.btnEditTexts).setOnClickListener(v -> {
-            dialog.dismiss();
-            showTextSettings();
-        });
 
         TextView aboutAuthor = sheet.findViewById(R.id.aboutAuthor);
         aboutAuthor.setText(getString(R.string.about_author_format, BuildConfig.VERSION_NAME));
@@ -895,9 +912,92 @@ public class MainActivity extends AppCompatActivity {
             ((TextView) row.findViewById(R.id.title)).setText(getSlotTitle(this, preset));
             ((TextView) row.findViewById(R.id.time)).setText(getSlotTime(this, preset));
             row.setOnClickListener(v -> toggle(slot));
+            row.setOnLongClickListener(v -> {
+                showSlotMenu(slot);
+                return true;
+            });
             rowViews[i] = row;
             rowContainer.addView(row);
         }
+    }
+
+    // ---------- 卡片长按菜单：修改文字 / 设置提醒 / 清除提醒 ----------
+
+    /** 长按卡片弹出的操作菜单。 */
+    private void showSlotMenu(int slot) {
+        List<String> items = new ArrayList<>();
+        items.add(getString(R.string.menu_edit_text));
+        items.add(getString(R.string.menu_set_reminder));
+        if (ReminderManager.isEnabled(this, slot)) {
+            items.add(getString(R.string.menu_clear_reminder));
+        }
+        String[] arr = items.toArray(new String[0]);
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(getSlotTitle(this, slot))
+                .setItems(arr, (d, which) -> {
+                    String item = arr[which];
+                    if (getString(R.string.menu_edit_text).equals(item)) {
+                        showTextSettings();
+                    } else if (getString(R.string.menu_set_reminder).equals(item)) {
+                        promptReminderTime(slot);
+                    } else if (getString(R.string.menu_clear_reminder).equals(item)) {
+                        ReminderManager.clearReminder(this, slot);
+                        ReminderManager.cancelSlot(this, slot);
+                        ReminderManager.deleteCalendarEvent(this);
+                        Toast.makeText(this, R.string.reminder_cleared,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .show();
+    }
+
+    /** 选择提醒时间（时间选择器）。 */
+    private void promptReminderTime(int slot) {
+        int h = ReminderManager.getHour(this, slot);
+        int m = ReminderManager.getMinute(this, slot);
+        new TimePickerDialog(this, (tp, hour, minute) -> {
+            pendingReminderSlot = slot;
+            ReminderManager.setReminder(this, slot, hour, minute);
+            ReminderManager.cancelSlot(this, slot);
+            requestReminderPermissions(slot);
+        }, h, m, true).show();
+    }
+
+    /** 请求提醒所需权限（日历写入 + Android 13+ 通知）。 */
+    private void requestReminderPermissions(int slot) {
+        List<String> perms = new ArrayList<>();
+        perms.add(Manifest.permission.WRITE_CALENDAR);
+        if (Build.VERSION.SDK_INT >= 33) {
+            perms.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        pendingReminderSlot = slot;
+        reminderPermsLauncher.launch(perms.toArray(new String[0]));
+    }
+
+    /** 权限结果就绪后：写入系统日历（若有权限）+ 安排闹钟 + 提示。 */
+    private void applyReminderAfterPermission(int slot) {
+        if (slot < 0) {
+            return;
+        }
+        boolean cal = checkSelfPermission(Manifest.permission.WRITE_CALENDAR)
+                == PackageManager.PERMISSION_GRANTED;
+        String time = String.format(Locale.CHINA, "%02d:%02d",
+                ReminderManager.getHour(this, slot),
+                ReminderManager.getMinute(this, slot));
+        if (cal) {
+            ReminderManager.writeCalendarEvent(this, slot,
+                    ReminderManager.getHour(this, slot),
+                    ReminderManager.getMinute(this, slot));
+            Toast.makeText(this,
+                    getString(R.string.reminder_set_done, time),
+                    Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this,
+                    getString(R.string.reminder_set_no_cal, time),
+                    Toast.LENGTH_LONG).show();
+        }
+        ReminderManager.ensureChannel(this);
+        ReminderManager.scheduleSlot(this, slot);
     }
 
     private int slotCount() {

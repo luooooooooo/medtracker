@@ -52,4 +52,15 @@
     <string name="icon_custom_deleted">已删除该自定义图标</string>
     <string name="icon_tip">点击"添加"可从相册选图并裁剪为 1:1 图标；点击已填充图标可设为桌面图标（系统会弹出确认框），长按可删除</string>
     <string name="icon_shortcut_label">打卡了吗？</string>
+    <string name="menu_edit_text">修改文字</string>
+    <string name="menu_set_reminder">设置提醒</string>
+    <string name="menu_clear_reminder">清除提醒</string>
+    <string name="reminder_set_done">提醒已设置：%1$s（每天重复，已写入系统日历）</string>
+    <string name="reminder_set_no_cal">提醒已设置：%1$s（未授予日历权限，仅软件内通知）</string>
+    <string name="reminder_cleared">提醒已清除</string>
+    <string name="reminder_notify_title">%1$s提醒</string>
+    <string name="reminder_notify_text">该打卡了：%2$s</string>
+    <string name="channel_reminder">打卡提醒</string>
+    <string name="cal_event_title">打卡了吗·打卡提醒</string>
+    <string name="slot_menu_title">卡片设置</string>
 </resources>

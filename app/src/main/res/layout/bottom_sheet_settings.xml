@@ -128,29 +128,6 @@
         android:layout_marginTop="10dp"
         android:orientation="horizontal" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="20dp"
-        android:background="?attr/colorOutlineVariant" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/settings_texts_section"
-        android:textAppearance="?attr/textAppearanceLabelLarge"
-        android:textColor="?attr/colorPrimary" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnEditTexts"
-        style="@style/Widget.Material3.Button.TonalButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/text_edit_title"
-        android:textColor="?attr/colorOnSecondaryContainer" />
-
     <TextView
         android:id="@+id/aboutAuthor"
         android:layout_width="match_parent"

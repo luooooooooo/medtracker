@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 
 /**
- * 开机接收器：设备重启后重新安排零点闹钟。
+ * 开机接收器：设备重启后重新安排零点闹钟与全部打卡提醒。
  */
 public class BootReceiver extends BroadcastReceiver {
 
@@ -13,6 +13,7 @@ public class BootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             MainActivity.scheduleMidnightAlarm(context);
+            ReminderManager.scheduleAll(context);
         }
     }
 }

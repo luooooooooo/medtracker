@@ -957,9 +957,10 @@ public class MainActivity extends AppCompatActivity {
         }, h, m, true).show();
     }
 
-    /** 请求提醒所需权限（日历写入 + Android 13+ 通知）。 */
+    /** 请求提醒所需权限（日历读写 + Android 13+ 通知）。 */
     private void requestReminderPermissions(int slot) {
         List<String> perms = new ArrayList<>();
+        perms.add(Manifest.permission.READ_CALENDAR);
         perms.add(Manifest.permission.WRITE_CALENDAR);
         if (Build.VERSION.SDK_INT >= 33) {
             perms.add(Manifest.permission.POST_NOTIFICATIONS);
@@ -973,7 +974,9 @@ public class MainActivity extends AppCompatActivity {
         if (slot < 0) {
             return;
         }
-        boolean cal = checkSelfPermission(Manifest.permission.WRITE_CALENDAR)
+        boolean cal = checkSelfPermission(Manifest.permission.READ_CALENDAR)
+                == PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(Manifest.permission.WRITE_CALENDAR)
                 == PackageManager.PERMISSION_GRANTED;
         String time = String.format(Locale.CHINA, "%02d:%02d",
                 ReminderManager.getHour(this, slot),

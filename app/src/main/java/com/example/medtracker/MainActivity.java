@@ -65,10 +65,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String[] SLOT_KEYS = {KEY_MORNING, KEY_NOON, KEY_EVENING};
     private static final String HEADER_CROP_FILE = "header_crop.jpg";
 
-    // 时段预设（按时间排序）：名称、建议时间、图标
+    // 打卡卡片图标：统一为同一个"小太阳"（无论 1 次还是 6 次打卡，图标一致）
     private static final int[] SLOT_ICONS = {
-            R.drawable.ic_morning, R.drawable.ic_noon, R.drawable.ic_afternoon,
-            R.drawable.ic_evening, R.drawable.ic_night, R.drawable.ic_late
+            R.drawable.ic_morning, R.drawable.ic_morning, R.drawable.ic_morning,
+            R.drawable.ic_morning, R.drawable.ic_morning, R.drawable.ic_morning
     };
     private static final int[] SLOT_TITLES = {
             R.string.slot_morning_title, R.string.slot_noon_title, R.string.slot_afternoon_title,

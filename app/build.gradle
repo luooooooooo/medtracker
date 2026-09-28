@@ -10,8 +10,8 @@ android {
         applicationId "com.example.medtracker"
         minSdk 26
         targetSdk 34
-        versionCode 30
-        versionName "2.4.4"
+        versionCode 31
+        versionName "2.4.5"
     }
 
     signingConfigs {

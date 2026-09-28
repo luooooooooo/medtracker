@@ -990,6 +990,15 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this,
                         getString(R.string.reminder_set_cal_fail, time),
                         Toast.LENGTH_LONG).show();
+                // 弹窗：显示日历诊断 + 一键打开系统日历
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.reminder_cal_diag_title)
+                        .setMessage(getString(R.string.reminder_cal_diag_body,
+                                ReminderManager.diagnoseCalendars(this)))
+                        .setPositiveButton(R.string.reminder_open_calendar,
+                                (d, w) -> openSystemCalendar())
+                        .setNegativeButton(R.string.text_cancel, null)
+                        .show();
             }
         } else {
             Toast.makeText(this,
@@ -1018,6 +1027,27 @@ public class MainActivity extends AppCompatActivity {
                     Uri.parse("package:" + getPackageName()));
             startActivity(it);
         } catch (Exception ignored) {
+        }
+    }
+
+    /** 打开系统日历 App（OPPO/通用包名兜底）。 */
+    private void openSystemCalendar() {
+        try {
+            Intent it = getPackageManager().getLaunchIntentForPackage("com.oppo.calendar");
+            if (it == null) {
+                it = getPackageManager().getLaunchIntentForPackage("com.android.calendar");
+            }
+            if (it == null) {
+                it = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("content://com.android.calendar/time"));
+            }
+            if (it != null) {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(it);
+            }
+        } catch (Exception ignored) {
+            Toast.makeText(this, R.string.reminder_open_calendar_manual,
+                    Toast.LENGTH_LONG).show();
         }
     }
 

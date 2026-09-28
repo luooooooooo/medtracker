@@ -195,6 +195,35 @@ public final class ReminderManager {
         }
     }
 
+    /** 日历诊断：返回手机上日历数据的真实情况，用于排查"找不到日历"。 */
+    static String diagnoseCalendars(Context c) {
+        ContentResolver cr = c.getContentResolver();
+        StringBuilder sb = new StringBuilder();
+        // 全部日历
+        try (Cursor cur = cr.query(CalendarContract.Calendars.CONTENT_URI,
+                new String[]{CalendarContract.Calendars._ID,
+                        CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
+                        CalendarContract.Calendars.VISIBLE},
+                null, null, null)) {
+            int n = cur == null ? -1 : cur.getCount();
+            sb.append("全部日历数=").append(n);
+            if (cur != null && cur.moveToFirst()) {
+                sb.append("，首个ID=").append(cur.getLong(0));
+            }
+        } catch (Exception e) {
+            sb.append("全部查询异常:").append(e.getClass().getSimpleName());
+        }
+        // 可见日历
+        try (Cursor cur = cr.query(CalendarContract.Calendars.CONTENT_URI,
+                new String[]{CalendarContract.Calendars._ID},
+                CalendarContract.Calendars.VISIBLE + " = 1", null, null)) {
+            sb.append("，可见数=").append(cur == null ? -1 : cur.getCount());
+        } catch (Exception e) {
+            sb.append("，可见查询异常:").append(e.getClass().getSimpleName());
+        }
+        return sb.toString();
+    }
+
     /** 找一个可写日历；找不到返回 -1。 */
     private static long findWritableCalendarId(ContentResolver cr) {
         String[] cols = new String[]{CalendarContract.Calendars._ID,

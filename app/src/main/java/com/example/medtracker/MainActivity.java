@@ -74,10 +74,6 @@ public class MainActivity extends AppCompatActivity {
             R.string.slot_morning_title, R.string.slot_noon_title, R.string.slot_afternoon_title,
             R.string.slot_evening_title, R.string.slot_night_title, R.string.slot_late_title
     };
-    private static final int[] SLOT_TIMES = {
-            R.string.slot_morning_time, R.string.slot_noon_time, R.string.slot_afternoon_time,
-            R.string.slot_evening_time, R.string.slot_night_time, R.string.slot_late_time
-    };
 
     @Nullable
     private static MainActivity instance;
@@ -143,26 +139,36 @@ public class MainActivity extends AppCompatActivity {
                 ? c.getString(SLOT_TITLES[slotIdx]) : v.trim();
     }
 
-    /** 第 slotIdx 个时段（0~5）的时间副标题（读用户自定义，缺省用通用默认）。 */
+    /** 时段前缀（与卡片时间联动显示）。 */
+    private static final String[] PERIOD_PREFIX = {"上午", "中午", "下午", "晚上", "睡前", "深夜"};
+
+    /** 卡片时间行：由提醒时间决定（带时段前缀）；未设置提醒时返回 null（页面不显示时间）。 */
+    @Nullable
     static String getSlotTime(Context c, int slotIdx) {
-        String v = prefs(c).getString("slot_time_" + slotIdx, null);
-        return v == null || v.trim().isEmpty()
-                ? c.getString(SLOT_TIMES[slotIdx]) : v.trim();
+        if (slotIdx < 0 || slotIdx >= MAX_SLOTS || !ReminderManager.isEnabled(c, slotIdx)) {
+            return null;
+        }
+        return PERIOD_PREFIX[slotIdx] + " "
+                + String.format(Locale.CHINA, "%02d:%02d",
+                ReminderManager.getHour(c, slotIdx),
+                ReminderManager.getMinute(c, slotIdx));
     }
 
-    /** 保存全部自定义文字，随后刷新页面与小部件。 */
-    static void saveCustomTexts(Context c, String mainTitle, String hint,
-                                String[] titles, String[] times) {
-        SharedPreferences.Editor ed = prefs(c).edit();
-        ed.putString(KEY_MAIN_TITLE, mainTitle == null ? "" : mainTitle.trim());
-        ed.putString(KEY_HINT_TEXT, hint == null ? "" : hint.trim());
-        for (int i = 0; i < MAX_SLOTS; i++) {
-            ed.putString("slot_title_" + i, titles == null || i >= titles.length || titles[i] == null
-                    ? "" : titles[i].trim());
-            ed.putString("slot_time_" + i, times == null || i >= times.length || times[i] == null
-                    ? "" : times[i].trim());
-        }
-        ed.apply();
+    /** 保存单个卡片的标题文字（长按单卡编辑），随后刷新小部件。 */
+    static void saveSlotTitle(Context c, int slotIdx, String title) {
+        prefs(c).edit()
+                .putString("slot_title_" + slotIdx,
+                        title == null ? "" : title.trim())
+                .apply();
+        MedWidgetProvider.updateAll(c);
+    }
+
+    /** 保存顶部大标题与底部提示语（设置面板入口），随后刷新小部件。 */
+    static void saveHeaderTexts(Context c, String mainTitle, String hint) {
+        prefs(c).edit()
+                .putString(KEY_MAIN_TITLE, mainTitle == null ? "" : mainTitle.trim())
+                .putString(KEY_HINT_TEXT, hint == null ? "" : hint.trim())
+                .apply();
         MedWidgetProvider.updateAll(c);
     }
 
@@ -530,13 +536,18 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout slotContainer = sheet.findViewById(R.id.slotContainer);
         buildSlotSwatches(slotContainer, dialog);
 
+        sheet.findViewById(R.id.btnEditHeader).setOnClickListener(v -> {
+            dialog.dismiss();
+            showTextSettings();
+        });
+
         TextView aboutAuthor = sheet.findViewById(R.id.aboutAuthor);
         aboutAuthor.setText(getString(R.string.about_author_format, BuildConfig.VERSION_NAME));
 
         dialog.show();
     }
 
-    /** 文字编辑弹窗：大标题 + 6 张卡片(标题/时间) + 底部提示语，保存后全端同步。 */
+    /** 标题与提示语编辑弹窗：顶部大标题 + 底部提示语（卡片文字在长按卡片时单卡编辑）。 */
     private void showTextSettings() {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         View sheet = LayoutInflater.from(this).inflate(R.layout.text_settings_sheet, null, false);
@@ -549,56 +560,10 @@ public class MainActivity extends AppCompatActivity {
                 sheet.findViewById(R.id.editHintText);
         editHint.setText(getHintText(this));
 
-        LinearLayout slotBox = sheet.findViewById(R.id.textSlotContainer);
-        final com.google.android.material.textfield.TextInputEditText[] titleEdits =
-                new com.google.android.material.textfield.TextInputEditText[MAX_SLOTS];
-        final com.google.android.material.textfield.TextInputEditText[] timeEdits =
-                new com.google.android.material.textfield.TextInputEditText[MAX_SLOTS];
-
-        for (int i = 0; i < MAX_SLOTS; i++) {
-            LinearLayout group = new LinearLayout(this);
-            group.setOrientation(LinearLayout.VERTICAL);
-            LinearLayout.LayoutParams groupLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            if (i > 0) groupLp.topMargin = dp(10);
-            slotBox.addView(group, groupLp);
-
-            TextView label = new TextView(this);
-            label.setText(getString(R.string.text_slot_label, i + 1));
-            label.setTextSize(13);
-            label.setTextColor(ThemeUtil.colorOnSurfaceVariant(this));
-            group.addView(label);
-
-            com.google.android.material.textfield.TextInputEditText titleEt =
-                    new com.google.android.material.textfield.TextInputEditText(this);
-            titleEt.setHint(getString(R.string.text_slot_title_hint));
-            titleEt.setMaxLines(1);
-            titleEt.setText(getSlotTitle(this, i));
-            titleEdits[i] = titleEt;
-            group.addView(titleEt, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-            com.google.android.material.textfield.TextInputEditText timeEt =
-                    new com.google.android.material.textfield.TextInputEditText(this);
-            timeEt.setHint(getString(R.string.text_slot_time_hint));
-            timeEt.setMaxLines(1);
-            timeEt.setText(getSlotTime(this, i));
-            timeEdits[i] = timeEt;
-            group.addView(timeEt, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        }
-
         sheet.findViewById(R.id.btnSaveTexts).setOnClickListener(v -> {
-            String[] titles = new String[MAX_SLOTS];
-            String[] times = new String[MAX_SLOTS];
-            for (int i = 0; i < MAX_SLOTS; i++) {
-                titles[i] = titleEdits[i].getText() == null ? "" : titleEdits[i].getText().toString();
-                times[i] = timeEdits[i].getText() == null ? "" : timeEdits[i].getText().toString();
-            }
             String main = editMainTitle.getText() == null ? "" : editMainTitle.getText().toString();
             String hint = editHint.getText() == null ? "" : editHint.getText().toString();
-            saveCustomTexts(this, main, hint, titles, times);
-            buildRows();
+            saveHeaderTexts(this, main, hint);
             refresh();
             dialog.dismiss();
         });
@@ -910,7 +875,14 @@ public class MainActivity extends AppCompatActivity {
             int preset = order[i];
             ((ImageView) row.findViewById(R.id.icon)).setImageResource(SLOT_ICONS[preset]);
             ((TextView) row.findViewById(R.id.title)).setText(getSlotTitle(this, preset));
-            ((TextView) row.findViewById(R.id.time)).setText(getSlotTime(this, preset));
+            TextView timeView = row.findViewById(R.id.time);
+            String timeText = getSlotTime(this, preset);
+            if (timeText == null) {
+                timeView.setVisibility(View.GONE);
+            } else {
+                timeView.setText(timeText);
+                timeView.setVisibility(View.VISIBLE);
+            }
             row.setOnClickListener(v -> toggle(slot));
             row.setOnLongClickListener(v -> {
                 showSlotMenu(slot);
@@ -937,17 +909,39 @@ public class MainActivity extends AppCompatActivity {
                 .setItems(arr, (d, which) -> {
                     String item = arr[which];
                     if (getString(R.string.menu_edit_text).equals(item)) {
-                        showTextSettings();
+                        showEditSlotTitle(slot);
                     } else if (getString(R.string.menu_set_reminder).equals(item)) {
                         promptReminderTime(slot);
                     } else if (getString(R.string.menu_clear_reminder).equals(item)) {
                         ReminderManager.clearReminder(this, slot);
                         ReminderManager.cancelSlot(this, slot);
                         ReminderManager.deleteCalendarEvent(this);
+                        buildRows();
+                        refresh();
                         Toast.makeText(this, R.string.reminder_cleared,
                                 Toast.LENGTH_SHORT).show();
                     }
                 })
+                .show();
+    }
+
+    /** 单卡文字编辑：只改当前卡片的标题。 */
+    private void showEditSlotTitle(int slot) {
+        View v = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_slot_title, null, false);
+        com.google.android.material.textfield.TextInputEditText et =
+                v.findViewById(R.id.etSlotTitle);
+        et.setText(getSlotTitle(this, slot));
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.menu_edit_text))
+                .setView(v)
+                .setPositiveButton(R.string.text_save, (d, w) -> {
+                    String t = et.getText() == null ? "" : et.getText().toString().trim();
+                    saveSlotTitle(this, slot, t);
+                    buildRows();
+                    refresh();
+                })
+                .setNegativeButton(R.string.text_cancel, null)
                 .show();
     }
 
@@ -998,6 +992,9 @@ public class MainActivity extends AppCompatActivity {
         }
         ReminderManager.ensureChannel(this);
         ReminderManager.scheduleSlot(this, slot);
+        // 时间行与提醒同步显示
+        buildRows();
+        refresh();
     }
 
     private int slotCount() {

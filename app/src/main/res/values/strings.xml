@@ -71,7 +71,8 @@
     <string name="channel_reminder">打卡提醒</string>
     <string name="cal_event_title">打卡了吗·打卡提醒</string>
     <string name="slot_menu_title">卡片设置</string>
-    <string name="text_edit_header">标题与提示语</string>
     <string name="text_cancel">取消</string>
-    <string name="settings_header_entry">标题与提示语</string>
+    <string name="edit_main_title_title">修改大标题</string>
+    <string name="edit_hint_title">修改标语</string>
+    <string name="edit_text_hint">请输入文字</string>
 </resources>

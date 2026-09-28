@@ -163,10 +163,17 @@ public class MainActivity extends AppCompatActivity {
         MedWidgetProvider.updateAll(c);
     }
 
-    /** 保存顶部大标题与底部提示语（设置面板入口），随后刷新小部件。 */
-    static void saveHeaderTexts(Context c, String mainTitle, String hint) {
+    /** 保存顶部大标题（长按标题直编），随后刷新小部件。 */
+    static void saveMainTitle(Context c, String title) {
         prefs(c).edit()
-                .putString(KEY_MAIN_TITLE, mainTitle == null ? "" : mainTitle.trim())
+                .putString(KEY_MAIN_TITLE, title == null ? "" : title.trim())
+                .apply();
+        MedWidgetProvider.updateAll(c);
+    }
+
+    /** 保存底部标语（长按标语直编），随后刷新小部件。 */
+    static void saveHintText(Context c, String hint) {
+        prefs(c).edit()
                 .putString(KEY_HINT_TEXT, hint == null ? "" : hint.trim())
                 .apply();
         MedWidgetProvider.updateAll(c);
@@ -418,11 +425,22 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, StatsActivity.class)));
         findViewById(R.id.btnSettings).setOnClickListener(v -> showSettingsSheet());
 
-        // 只有严格点击图片本身才更换照片；长按图片打开个性化面板；
+        // 单击头图：只播放放大回弹动效，不更换图片；
+        // 长按头图：更换图片（相册选图 → 裁剪）。
         // 点击日期/进度/已完成、图片周围空白区域均不响应
-        headerImage.setOnClickListener(v -> pickHeaderPhoto());
+        headerImage.setOnClickListener(v -> bounceHeader());
         headerImage.setOnLongClickListener(v -> {
-            showSettingsSheet();
+            pickHeaderPhoto();
+            return true;
+        });
+
+        // 大标题与标语：长按直接编辑该文字
+        headerTitle.setOnLongClickListener(v -> {
+            showEditMainTitle();
+            return true;
+        });
+        hintText.setOnLongClickListener(v -> {
+            showEditHintText();
             return true;
         });
 
@@ -536,39 +554,50 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout slotContainer = sheet.findViewById(R.id.slotContainer);
         buildSlotSwatches(slotContainer, dialog);
 
-        sheet.findViewById(R.id.btnEditHeader).setOnClickListener(v -> {
-            dialog.dismiss();
-            showTextSettings();
-        });
-
         TextView aboutAuthor = sheet.findViewById(R.id.aboutAuthor);
         aboutAuthor.setText(getString(R.string.about_author_format, BuildConfig.VERSION_NAME));
 
         dialog.show();
     }
 
-    /** 标题与提示语编辑弹窗：顶部大标题 + 底部提示语（卡片文字在长按卡片时单卡编辑）。 */
-    private void showTextSettings() {
-        BottomSheetDialog dialog = new BottomSheetDialog(this);
-        View sheet = LayoutInflater.from(this).inflate(R.layout.text_settings_sheet, null, false);
-        dialog.setContentView(sheet);
+    /** 长按大标题：编辑大标题文字。 */
+    private void showEditMainTitle() {
+        View v = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_slot_title, null, false);
+        com.google.android.material.textfield.TextInputEditText et =
+                v.findViewById(R.id.etSlotTitle);
+        et.setHint(R.string.edit_text_hint);
+        et.setText(getMainTitle(this));
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.edit_main_title_title)
+                .setView(v)
+                .setPositiveButton(R.string.text_save, (d, w) -> {
+                    String t = et.getText() == null ? "" : et.getText().toString().trim();
+                    saveMainTitle(this, t);
+                    refresh();
+                })
+                .setNegativeButton(R.string.text_cancel, null)
+                .show();
+    }
 
-        com.google.android.material.textfield.TextInputEditText editMainTitle =
-                sheet.findViewById(R.id.editMainTitle);
-        editMainTitle.setText(getMainTitle(this));
-        com.google.android.material.textfield.TextInputEditText editHint =
-                sheet.findViewById(R.id.editHintText);
-        editHint.setText(getHintText(this));
-
-        sheet.findViewById(R.id.btnSaveTexts).setOnClickListener(v -> {
-            String main = editMainTitle.getText() == null ? "" : editMainTitle.getText().toString();
-            String hint = editHint.getText() == null ? "" : editHint.getText().toString();
-            saveHeaderTexts(this, main, hint);
-            refresh();
-            dialog.dismiss();
-        });
-
-        dialog.show();
+    /** 长按标语：编辑底部提示语。 */
+    private void showEditHintText() {
+        View v = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_slot_title, null, false);
+        com.google.android.material.textfield.TextInputEditText et =
+                v.findViewById(R.id.etSlotTitle);
+        et.setHint(R.string.edit_text_hint);
+        et.setText(getHintText(this));
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.edit_hint_title)
+                .setView(v)
+                .setPositiveButton(R.string.text_save, (d, w) -> {
+                    String t = et.getText() == null ? "" : et.getText().toString().trim();
+                    saveHintText(this, t);
+                    refresh();
+                })
+                .setNegativeButton(R.string.text_cancel, null)
+                .show();
     }
 
     /** 每日喝药次数选择：1~6 个圆形数字，当前值高亮，点击即生效并重建页面。 */

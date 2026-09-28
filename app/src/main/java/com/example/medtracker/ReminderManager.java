@@ -195,7 +195,7 @@ public final class ReminderManager {
         }
     }
 
-    /** 找一个可写日历；优先可写级别较高的，其次任意可见日历；找不到返回 -1。 */
+    /** 找一个可写日历；找不到返回 -1。 */
     private static long findWritableCalendarId(ContentResolver cr) {
         String[] cols = new String[]{CalendarContract.Calendars._ID,
                 CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL};
@@ -217,6 +217,15 @@ public final class ReminderManager {
         try (Cursor cur = cr.query(CalendarContract.Calendars.CONTENT_URI,
                 new String[]{CalendarContract.Calendars._ID},
                 CalendarContract.Calendars.VISIBLE + " = 1", null, null)) {
+            if (cur != null && cur.moveToFirst()) {
+                return cur.getLong(0);
+            }
+        } catch (Exception ignored) {
+        }
+        // 第三遍：任意日历，不限可见性（OPPO/ColorOS 等 ROM 的日历
+        // 常因同步未开启而 visible=0，此时仍可写入）
+        try (Cursor cur = cr.query(CalendarContract.Calendars.CONTENT_URI,
+                new String[]{CalendarContract.Calendars._ID}, null, null, null)) {
             if (cur != null && cur.moveToFirst()) {
                 return cur.getLong(0);
             }

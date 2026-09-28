@@ -57,7 +57,7 @@
     <string name="menu_clear_reminder">清除提醒</string>
     <string name="reminder_set_done">提醒已设置：%1$s（每天重复，已写入系统日历）</string>
     <string name="reminder_set_no_cal">提醒已设置：%1$s（未授予日历权限，仅软件内通知）</string>
-    <string name="reminder_set_cal_fail">提醒已设置：%1$s（未能写入系统日历：未找到可用日历，请在系统日历中登录账号后重试）</string>
+    <string name="reminder_set_cal_fail">提醒已设置：%1$s（未能写入系统日历：未找到可写入的日历。请打开系统「日历」App 确认存在日历，并开启 OPPO 云服务日历同步，然后重新设置提醒）</string>
     <string name="reminder_perm_title">需要日历权限</string>
     <string name="reminder_perm_guide">要把提醒写入系统日历，需要在系统设置中允许「打卡了吗？」访问日历。也可以稍后在长按卡片重新设置提醒。</string>
     <string name="reminder_go_settings">去设置开启</string>
